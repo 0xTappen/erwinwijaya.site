@@ -26,13 +26,17 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning data-framework="nextjs-tailwind-shadcn">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-        {/* === Tambahan META Supaya Wappalyzer Pasti Nemu === */}
+        <meta name="application-name" content="Erwin Wijaya Portfolio" />
         <meta name="generator" content="Next.js + TailwindCSS + shadcn/ui + Framer Motion" />
         <meta name="ui-library" content="shadcn/ui" />
         <meta name="framework" content="shadcn/ui" />
         <meta name="built-with" content="Next.js, TailwindCSS, shadcn/ui" />
-        <meta name="application-name" content="Erwin Wijaya Portfolio" />
+
+        {/* ✅ Favicon langsung (agar muncul saat LoadingScreen) */}
+        <link rel="icon" href="/logo/logo.png" type="image/png" />
+        <link rel="shortcut icon" href="/logo/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo/logo.png" />
+        <link rel="manifest" href="/site.webmanifest" />
 
         {/* === Trick supaya Wappalyzer detect via SSR === */}
         <script
@@ -45,10 +49,8 @@ export default function RootLayout({
             `,
           }}
         />
-
-        <link rel="icon" href="/logo/logo.png" type="image/png" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
+
       <body className={inter.className} data-library="shadcn-ui">
         {/* Marker untuk Wappalyzer DOM scan */}
         <div id="__shadcn-ui" data-library="shadcn/ui" className="hidden">
