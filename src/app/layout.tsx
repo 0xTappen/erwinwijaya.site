@@ -13,8 +13,11 @@ export const metadata: Metadata = {
   title: "Erwin Wijaya",
   description: "Cyber Security Enthusiast & CTF Player",
   icons: {
-    icon: "/logo/logo.png",
+    icon: "/favicon-32x32.png",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
   },
+  manifest: "/site.webmanifest",
 }
 
 export default function RootLayout({
@@ -32,11 +35,14 @@ export default function RootLayout({
         <meta name="framework" content="shadcn/ui" />
         <meta name="built-with" content="Next.js, TailwindCSS, shadcn/ui" />
 
-        {/* ✅ Favicon langsung (agar muncul saat LoadingScreen) */}
-        <link rel="icon" href="/logo/logo.png" type="image/png" />
-        <link rel="shortcut icon" href="/logo/logo.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/logo/logo.png" />
+        {/* ✅ Favicon lengkap & SEO-friendly */}
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="manifest" href="/site.webmanifest" />
+        <meta name="theme-color" content="#000000" />
 
         {/* === Trick supaya Wappalyzer detect via SSR === */}
         <script
@@ -64,9 +70,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LoadingScreen />
-          <SmoothScrollProvider>
-            {children}
-          </SmoothScrollProvider>
+          <SmoothScrollProvider>{children}</SmoothScrollProvider>
         </ThemeProvider>
       </body>
     </html>
