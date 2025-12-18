@@ -1,3 +1,5 @@
+/* shadcn/ui */
+/* @see https://ui.shadcn.com */
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -150,8 +152,12 @@ html {
 }
 
 @keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
 }
 .animate-gradient {
   animation: gradientMove 6s linear infinite;
@@ -190,7 +196,11 @@ html {
 }
 
 @layer base {
-  img, video, canvas, svg, picture {
+  img,
+  video,
+  canvas,
+  svg,
+  picture {
     display: block;
     max-width: 100%;
     height: auto;
