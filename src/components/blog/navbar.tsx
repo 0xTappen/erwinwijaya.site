@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useState, useEffect } from "react"
-import { Menu, X, Home, BookOpen, Code2, Award, Briefcase, Mail } from "lucide-react"
+import { Menu, X, Home, BookOpen, Code2, Award, Briefcase, Mail, Hash } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { usePathname, useRouter } from "next/navigation"
 
@@ -57,7 +57,7 @@ export function Navbar() {
 
   const pageLinks = [
     { name: "Blog", href: "/blog", icon: BookOpen },
-    { name: "Notes", href: "/notes", icon: BookOpen },
+    { name: "Tags", href: "/tags", icon: Hash },
   ]
 
   const isActive = (section: string) => {

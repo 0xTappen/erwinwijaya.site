@@ -1,51 +1,165 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Search, Tag, TrendingUp, Clock, X, Sparkles, Github, Linkedin, Mail, Heart } from "lucide-react";
-import BlogCard from "@/components/blog/BlogCard";
-import { searchPosts } from "@/lib/blog";
-import type { BlogPost } from "@/lib/mdx";
+import { Sparkles, Github, Linkedin, Mail, Heart, Tag, Search, TrendingUp, Clock, X, ArrowRight } from "lucide-react";
 import Link from "next/link";
+
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import BlogCard from "@/components/blog/BlogCard";
+import { BlogPagination } from "@/components/blog/BlogPagination";
+import { BlogEmptyState } from "@/components/blog/BlogEmptyState";
+import { PAGE_SIZE } from "@/lib/blog-types";
+import type { BlogPost } from "@/lib/mdx";
 
 interface BlogContentProps {
   allPosts: BlogPost[];
-  allTags: { tag: string; count: number }[];
 }
 
-export default function BlogClient({ allPosts, allTags }: BlogContentProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"all" | "featured" | "recent">("all");
+// Client-side filter function (without tags)
+function filterPostsClient(
+  posts: BlogPost[],
+  params: {
+    q?: string;
+    tab?: "all" | "featured" | "recent";
+    page?: number;
+  }
+) {
+  const { q, tab = "all", page = 1 } = params;
+  let filtered = [...posts];
 
-  const filteredPosts = useMemo(() => {
-    let posts = allPosts;
-    if (viewMode === "featured") posts = posts.filter((p) => p.frontmatter.featured);
-    else if (viewMode === "recent") posts = posts.slice(0, 6);
-    if (searchQuery) posts = searchPosts(posts, searchQuery);
-    if (selectedTag)
-      posts = posts.filter((p) =>
-        p.frontmatter.tags.map((t) => t.toLowerCase()).includes(selectedTag.toLowerCase())
-      );
-    return posts;
-  }, [allPosts, searchQuery, selectedTag, viewMode]);
+  // Filter by tab
+  if (tab === "featured") {
+    filtered = filtered.filter((p) => p.frontmatter.featured);
+  } else if (tab === "recent") {
+    // Recent is just first 12 posts
+    filtered = filtered.slice(0, 12);
+  }
 
-  const featuredPosts = allPosts.filter((p) => p.frontmatter.featured);
-  const recentPosts = allPosts.slice(0, 6);
+  // Filter by search query
+  if (q && q.trim()) {
+    const query = q.toLowerCase().trim();
+    filtered = filtered.filter((post) => {
+      const titleMatch = post.frontmatter.title.toLowerCase().includes(query);
+      const summaryMatch = post.frontmatter.summary.toLowerCase().includes(query);
+      return titleMatch || summaryMatch;
+    });
+  }
 
-  const clearFilters = () => {
-    setSearchQuery("");
-    setSelectedTag(null);
+  const totalPosts = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalPosts / PAGE_SIZE));
+
+  // Clamp page to valid range
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+
+  // Paginate
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const paginatedPosts = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
+  return {
+    posts: paginatedPosts,
+    totalPosts,
+    totalPages,
+    currentPage,
   };
+}
+
+export default function BlogClient({ allPosts }: BlogContentProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Parse URL params (ignore tags param if present)
+  const urlQuery = searchParams.get("q") || "";
+  const urlTab = (searchParams.get("tab") as "all" | "featured" | "recent") || "all";
+  const urlPage = parseInt(searchParams.get("page") || "1", 10) || 1;
+
+  // Local state synced with URL
+  const [searchQuery, setSearchQuery] = useState(urlQuery);
+  const [activeTab, setActiveTab] = useState<"all" | "featured" | "recent">(urlTab);
+  const [currentPage, setCurrentPage] = useState(urlPage);
+  const [localSearch, setLocalSearch] = useState(urlQuery);
+
+  // Sync state with URL on mount and URL changes
+  useEffect(() => {
+    setSearchQuery(urlQuery);
+    setLocalSearch(urlQuery);
+    setActiveTab(urlTab);
+    setCurrentPage(urlPage);
+  }, [urlQuery, urlTab, urlPage]);
+
+  // Debounced search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch !== searchQuery) {
+        setSearchQuery(localSearch);
+        setCurrentPage(1);
+        updateUrl({ q: localSearch, tab: activeTab, page: 1 });
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [localSearch]);
+
+  // Update URL when filter state changes
+  const updateUrl = useCallback((params: {
+    q?: string;
+    tab?: string;
+    page?: number;
+  }) => {
+    const newParams = new URLSearchParams();
+    
+    if (params.q) newParams.set("q", params.q);
+    if (params.tab && params.tab !== "all") newParams.set("tab", params.tab);
+    if (params.page && params.page > 1) newParams.set("page", params.page.toString());
+
+    const queryString = newParams.toString();
+    router.push(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+  }, [router, pathname]);
+
+  // Filter and paginate posts
+  const { posts: filteredPosts, totalPosts, totalPages, currentPage: actualPage } = useMemo(() => {
+    return filterPostsClient(allPosts, {
+      q: searchQuery,
+      tab: activeTab,
+      page: currentPage,
+    });
+  }, [allPosts, searchQuery, activeTab, currentPage]);
+
+  // Stats
+  const featuredCount = useMemo(() => allPosts.filter(p => p.frontmatter.featured).length, [allPosts]);
+
+  // Handlers
+  const handleTabChange = useCallback((tab: "all" | "featured" | "recent") => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+    updateUrl({ q: searchQuery, tab, page: 1 });
+  }, [searchQuery, updateUrl]);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    updateUrl({ q: searchQuery, tab: activeTab, page });
+    window.scrollTo({ top: 400, behavior: "smooth" });
+  }, [searchQuery, activeTab, updateUrl]);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setLocalSearch("");
+    setActiveTab("all");
+    setCurrentPage(1);
+    updateUrl({});
+  }, [updateUrl]);
+
+  const hasActiveFilters = searchQuery || activeTab !== "all";
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <div className="container mx-auto px-4 pb-20 flex-1">
         {/* ====== HERO ====== */}
-        <section className="text-center max-w-4xl mx-auto mb-12">
+        <section className="text-center max-w-4xl mx-auto mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -69,96 +183,108 @@ export default function BlogClient({ allPosts, allTags }: BlogContentProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg sm:text-xl text-muted-foreground mb-8 leading-relaxed"
+            className="text-lg sm:text-xl text-muted-foreground mb-6 leading-relaxed"
           >
             Deep dives into cybersecurity, CTF writeups, and web development tricks.
           </motion.p>
-
-          {/* Search */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="relative max-w-2xl mx-auto mb-8"
-          >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
-            <Input
-              type="text"
-              placeholder="Search articles by title, tags, or content..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-10 h-14 text-base rounded-xl border-2 focus:border-primary transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-muted transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </motion.div>
-
-          {/* Tabs */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as typeof viewMode)} className="w-full max-w-md mx-auto">
-              <TabsList className="grid w-full grid-cols-3 h-12">
-                <TabsTrigger value="all"><Tag className="w-4 h-4 mr-1" />All</TabsTrigger>
-                <TabsTrigger value="featured"><TrendingUp className="w-4 h-4 mr-1" />Featured</TabsTrigger>
-                <TabsTrigger value="recent"><Clock className="w-4 h-4 mr-1" />Recent</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </motion.div>
         </section>
 
-        {/* ====== TAG FILTER ====== */}
-        <motion.section
+        {/* ====== FILTERS ====== */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="mb-12"
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="sticky top-20 z-30 py-4 -mx-4 px-4 bg-background/95 backdrop-blur-xl border-b border-border/50 mb-6"
         >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Filter by Tags</h3>
-            {(selectedTag || searchQuery) && (
-              <button onClick={clearFilters} className="text-sm text-primary hover:underline flex items-center gap-1">
-                <X className="w-3 h-3" />
-                Clear filters
-              </button>
+          {/* Search and Actions Row */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                type="text"
+                placeholder="Search articles..."
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                className="pl-10 pr-10 h-10"
+                aria-label="Search articles"
+              />
+              {localSearch && (
+                <button
+                  onClick={() => {
+                    setLocalSearch("");
+                    setSearchQuery("");
+                    updateUrl({ tab: activeTab, page: 1 });
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Explore Tags Button */}
+            <Link href="/tags">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Explore Tags
+              </Button>
+            </Link>
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearFilters}
+                className="flex items-center gap-1.5 text-destructive hover:text-destructive"
+              >
+                <X className="w-3.5 h-3.5" />
+                Clear
+              </Button>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <AnimatePresence mode="popLayout">
-              {allTags.map(({ tag, count }, index) => (
-                <motion.button
-                  key={tag}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.2, delay: index * 0.03 }}
-                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Badge
-                    variant={selectedTag === tag ? "default" : "secondary"}
-                    className="px-4 py-2 text-sm cursor-pointer transition-all hover:shadow-md"
-                  >
-                    <Tag className="w-3 h-3 mr-1.5" />
-                    {tag}
-                    <span className="ml-1.5 opacity-70">({count})</span>
-                  </Badge>
-                </motion.button>
-              ))}
-            </AnimatePresence>
-          </div>
-        </motion.section>
 
-        {/* ====== POSTS ====== */}
+          {/* Tabs */}
+          <Tabs 
+            value={activeTab} 
+            onValueChange={(v) => handleTabChange(v as typeof activeTab)}
+          >
+            <TabsList className="grid w-full max-w-md grid-cols-3 mx-auto">
+              <TabsTrigger value="all" className="flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5" />
+                All
+              </TabsTrigger>
+              <TabsTrigger value="featured" className="flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5" />
+                Featured
+              </TabsTrigger>
+              <TabsTrigger value="recent" className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                Recent
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {/* Helper text */}
+          <p className="text-center text-xs text-muted-foreground mt-3">
+            Browse topics via the <Link href="/tags" className="text-primary hover:underline">Tags page</Link>.
+          </p>
+        </motion.div>
+
+        {/* ====== RESULTS INFO ====== */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center justify-between mb-6 text-sm text-muted-foreground"
+        >
+          <span>
+            Showing {filteredPosts.length} of {totalPosts} {totalPosts === 1 ? "article" : "articles"}
+            {totalPages > 1 && ` (Page ${actualPage} of ${totalPages})`}
+          </span>
+        </motion.div>
+
+        {/* ====== POSTS GRID ====== */}
         <AnimatePresence mode="wait">
           {filteredPosts.length > 0 ? (
             <motion.div
@@ -174,25 +300,19 @@ export default function BlogClient({ allPosts, allTags }: BlogContentProps) {
               ))}
             </motion.div>
           ) : (
-            <motion.div
-              key="no-posts"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-              className="text-center py-20"
-            >
-              <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
-                <Search className="w-10 h-10 text-muted-foreground" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">No posts found</h3>
-              <p className="text-muted-foreground mb-6">Try adjusting your search or filters</p>
-              <button onClick={clearFilters} className="px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                Clear all filters
-              </button>
-            </motion.div>
+            <BlogEmptyState
+              searchQuery={searchQuery}
+              onClearFilters={handleClearFilters}
+            />
           )}
         </AnimatePresence>
+
+        {/* ====== PAGINATION ====== */}
+        <BlogPagination
+          currentPage={actualPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
 
         {/* ====== STATS ====== */}
         <motion.section
@@ -202,10 +322,24 @@ export default function BlogClient({ allPosts, allTags }: BlogContentProps) {
           className="mt-20 pt-12 border-t border-border"
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div><div className="text-3xl font-bold mb-1">{allPosts.length}</div><div className="text-sm text-muted-foreground">Total Posts</div></div>
-            <div><div className="text-3xl font-bold mb-1">{featuredPosts.length}</div><div className="text-sm text-muted-foreground">Featured</div></div>
-            <div><div className="text-3xl font-bold mb-1">{allTags.length}</div><div className="text-sm text-muted-foreground">Categories</div></div>
-            <div><div className="text-3xl font-bold mb-1">{recentPosts.length}</div><div className="text-sm text-muted-foreground">Recent</div></div>
+            <div>
+              <div className="text-3xl font-bold mb-1">{allPosts.length}</div>
+              <div className="text-sm text-muted-foreground">Total Posts</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold mb-1">{featuredCount}</div>
+              <div className="text-sm text-muted-foreground">Featured</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold mb-1">{PAGE_SIZE}</div>
+              <div className="text-sm text-muted-foreground">Per Page</div>
+            </div>
+            <div>
+              <Link href="/tags" className="block hover:text-primary transition-colors">
+                <div className="text-3xl font-bold mb-1">→</div>
+                <div className="text-sm text-muted-foreground">Explore Tags</div>
+              </Link>
+            </div>
           </div>
         </motion.section>
       </div>
@@ -258,7 +392,7 @@ export default function BlogClient({ allPosts, allTags }: BlogContentProps) {
                   {[
                     { href: "/", label: "Home" },
                     { href: "/blog", label: "Blog" },
-                    { href: "/#projects", label: "Projects" },
+                    { href: "/tags", label: "Tags" },
                     { href: "/#contact", label: "Contact" },
                   ].map((link) => (
                     <li key={link.label}>
@@ -274,7 +408,7 @@ export default function BlogClient({ allPosts, allTags }: BlogContentProps) {
                 </ul>
               </motion.div>
 
-              {/* Categories */}
+              {/* Explore */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -282,23 +416,20 @@ export default function BlogClient({ allPosts, allTags }: BlogContentProps) {
                 transition={{ delay: 0.2 }}
                 className="space-y-4"
               >
-                <h4 className="text-lg font-bold tracking-tight">Categories</h4>
-                <ul className="space-y-3">
-                  {["Cybersecurity", "CTF", "Web Dev", "Linux"].map((cat) => (
-                    <li key={cat}>
-                      <Link
-                        href={`/blog`}
-                        className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2"
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary/50" />
-                        {cat}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                <h4 className="text-lg font-bold tracking-tight">Explore</h4>
+                <p className="text-sm text-muted-foreground">
+                  Browse all tags and discover more content.
+                </p>
+                <Link
+                  href="/tags"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                >
+                  <Tag className="w-4 h-4" />
+                  View All Tags
+                </Link>
               </motion.div>
 
-              {/* Newsletter */}
+              {/* Stay Updated */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -308,13 +439,14 @@ export default function BlogClient({ allPosts, allTags }: BlogContentProps) {
               >
                 <h4 className="text-lg font-bold tracking-tight">Stay Updated</h4>
                 <p className="text-sm text-muted-foreground">
-                  Get notified about new posts and updates.
+                  Check back often for new articles and writeups.
                 </p>
                 <Link
-                  href="/blog"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  href="/blog?tab=recent"
+                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
                 >
-                  View All Posts
+                  View Recent Posts
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
               </motion.div>
             </div>
