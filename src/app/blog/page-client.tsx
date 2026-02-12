@@ -461,9 +461,7 @@ export default function BlogClient({ allPosts }: BlogContentProps) {
               <div className="flex items-center gap-2">
                 <span>© {new Date().getFullYear()} Erwin Wijaya.</span>
                 <span className="hidden md:inline">•</span>
-                <span className="flex items-center gap-1">
-                  Made with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> and ☕
-                </span>
+                Designed & Built by Erwin Wijaya
               </div>
               <div className="flex items-center gap-4 text-xs">
                 <Link href="/" className="hover:text-primary transition-colors">Privacy</Link>
