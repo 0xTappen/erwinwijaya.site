@@ -173,7 +173,7 @@ export default function AboutSection() {
                   }}
                 />
                 <Avatar className="relative w-32 h-32 sm:w-40 sm:h-40 shadow-2xl ring-4 ring-primary/20 hover:ring-primary/40 transition-all duration-300">
-                  <AvatarImage src="https://github.com/Romm31.png" alt="Profile Picture" />
+                  <AvatarImage src="https://github.com/0xTappen.png" alt="Profile Picture" />
                   <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary to-primary/50">EW</AvatarFallback>
                 </Avatar>
               </motion.div>
@@ -191,7 +191,7 @@ export default function AboutSection() {
                       className="text-base text-muted-foreground cursor-pointer hover:text-primary transition-colors inline-flex items-center gap-2 group"
                       whileHover={{ scale: 1.05 }}
                     >
-                      @Romm31
+                      @0xTappen
                       <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </motion.p>
                   </HoverCardTrigger>
@@ -199,7 +199,7 @@ export default function AboutSection() {
                   <HoverCardContent className="w-80 p-5 backdrop-blur-xl bg-card/95 border-primary/20">
                     <div className="flex gap-4">
                       <Avatar className="h-14 w-14 ring-2 ring-primary/20">
-                        <AvatarImage src="https://github.com/Romm31.png" />
+                        <AvatarImage src="https://github.com/0xTappen.png" />
                         <AvatarFallback>EW</AvatarFallback>
                       </Avatar>
                       <div className="space-y-2 flex-1">

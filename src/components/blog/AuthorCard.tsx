@@ -41,7 +41,7 @@ export default function AuthorCard({ author = 'Erwin Wijaya' }: AuthorCardProps)
           {/* Social Links */}
           <div className="flex flex-wrap gap-3">
             <a
-              href="https://github.com/Romm31"
+              href="https://github.com/0xTappen"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 text-sm font-medium transition-colors group"

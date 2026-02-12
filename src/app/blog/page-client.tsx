@@ -364,7 +364,7 @@ export default function BlogClient({ allPosts }: BlogContentProps) {
                   Cyber Security Enthusiast & CTF Player. Passionate about web security and sharing knowledge.
                 </p>
                 <div className="flex gap-3 pt-2">
-                  <a href="https://github.com/Romm31" target="_blank" rel="noopener noreferrer"
+                  <a href="https://github.com/0xTappen" target="_blank" rel="noopener noreferrer"
                     className="w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center border border-primary/20 hover:border-primary/40 transition-all">
                     <Github className="w-4 h-4" />
                   </a>

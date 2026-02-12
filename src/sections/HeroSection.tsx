@@ -138,7 +138,7 @@ export default function HeroSection() {
                                 onMouseEnter={() => setIsHovered(true)}
                                 onMouseLeave={() => setIsHovered(false)}
                             >
-                                <AvatarImage src="https://github.com/Romm31.png" alt="Profile Picture Erwin Wijaya" />
+                                <AvatarImage src="https://github.com/0xTappen.png" alt="Profile Picture Erwin Wijaya" />
                                 <AvatarFallback className="text-2xl md:text-4xl font-bold bg-gradient-to-br from-primary to-primary/50">EW</AvatarFallback>
                             </Avatar>
                             {/* Sparkle effect on hover */}

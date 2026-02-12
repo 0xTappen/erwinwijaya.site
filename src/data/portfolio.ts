@@ -14,7 +14,7 @@ import {
 } from "react-icons/si"
 
 // --- KONSTANTA ---
-export const GITHUB_URL = "https://github.com/Romm31"
+export const GITHUB_URL = "https://github.com/0xTappen"
 export const EMAIL = "erwinwijaya6510@gmail.com"
 export const LINKEDIN_URL = "https://id.linkedin.com/in/erwin-wijaya-b68b112999"
 export const TENESYS_URL = "https://ctftime.org/team/22044/"
@@ -36,7 +36,7 @@ export const projects = [
     description:
       "Student organization website for member management and information, in collaboration with the Palm Oil Processing Student Association of ITSB.",
     tags: ["Web Dev", "Collaboration", "Tailwind"],
-    link: "https://github.com/Romm31/himpunan-web",
+    link: "https://github.com/0xTappen/himpunan-web",
   },
   {
     id: 2,
@@ -44,7 +44,7 @@ export const projects = [
     description:
       "A simple Capture The Flag (CTF) platform built using pure native PHP. Ideal for small events or educational purposes.",
     tags: ["PHP", "Security", "Web App"],
-    link: "https://github.com/Romm31/Native-CTF-Platform",
+    link: "https://github.com/0xTappen/Native-CTF-Platform",
   },
   {
     id: 3,
@@ -52,7 +52,7 @@ export const projects = [
     description:
       "Command Line Interface (CLI) tool for Decryption/Enkripsi using the Caesar Cipher algorithm.",
     tags: ["Security", "Python", "CLI Tool"],
-    link: "https://github.com/Romm31/Caesar-Cipher-CLI",
+    link: "https://github.com/0xTappen/Caesar-Cipher-CLI",
   },
   {
     id: 4,
@@ -60,7 +60,7 @@ export const projects = [
     description:
       "Webhook implementation for Discord server notifications related to CTF events or results from GZCTF.",
     tags: ["Webhook", "Automation", "Discord"],
-    link: "https://github.com/Romm31/GZCTF-Discord-Webhooks",
+    link: "https://github.com/0xTappen/GZCTF-Discord-Webhooks",
   },
 ]
 
